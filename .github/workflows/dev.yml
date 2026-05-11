@@ -1,9 +1,9 @@
-name: 'Terraform Deployment'
+name: 'Terraform Dev Deployment Plan'
 
 on:
   push:
     branches:
-      - main
+      - dev
   pull_request:
     branches:
       - main
@@ -28,13 +28,10 @@ jobs:
         
       - name: Terraform Init
         run: terraform init
-  
+
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
         run: terraform plan
 
-      - name: Terraform Apply
-        if: github.event_name == 'push'
-        run: terraform apply -auto-approve
-        
-      - name: Terraform destroy
-        run: terraform destroy -auto-approve
