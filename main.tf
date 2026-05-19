@@ -1,85 +1,110 @@
-
 provider "azurerm" {
-  features {
-    resource_group {
-      prevent_deletion_if_contains_resources = false
-    }
-  }
+  features {}
 }
 
-/*
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "tf-stage-azure-open-ai"
-    storage_account_name = "terraformstateopen2024ai"
-    container_name       = "terraformopenai2024"
-    key                  = "terraform.tfstate"
-  }
-}*/
+# -------------------------------
+# Inputs
+# -------------------------------
+variable "vm_name" {}
+variable "vm_size" {}
+variable "admin_username" {}
+variable "admin_password" {}
 
-resource "azurerm_resource_group" "example" {
-  name     = "example-resources5"
-  location = "West Europe"
+# -------------------------------
+# Existing Resource Group
+# -------------------------------
+data "azurerm_resource_group" "rg" {
+  name = "NAGA-IACHYBRID-DEV"
 }
 
-resource "azurerm_virtual_network" "example" {
-  name                = "example-network3"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+# -------------------------------
+# Existing VNet
+# -------------------------------
+data "azurerm_virtual_network" "vnet" {
+  name                = "sntdevarmvntuw2222"
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
-resource "azurerm_subnet" "example" {
-  name                 = "example-subnet3"
-  resource_group_name  = azurerm_resource_group.example.name
-  virtual_network_name = azurerm_virtual_network.example.name
-  address_prefixes     = ["10.0.2.0/24"]
+# -------------------------------
+# Existing Subnet
+# -------------------------------
+data "azurerm_subnet" "subnet" {
+  name                 = "iacdevarmsubuw4444"
+  virtual_network_name = data.azurerm_virtual_network.vnet.name
+  resource_group_name  = data.azurerm_resource_group.rg.name
 }
 
-resource "azurerm_network_interface" "example" {
-  name                = "example-nic3"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+# -------------------------------
+# Existing NSG
+# -------------------------------
+data "azurerm_network_security_group" "nsg" {
+  name                = "iacdevarmnsguw2222"
+  resource_group_name = data.azurerm_resource_group.rg.name
+}
+
+# -------------------------------
+# Existing Route Table
+# -------------------------------
+data "azurerm_route_table" "rt" {
+  name                = "sntdevarmrotuw4444"
+  resource_group_name = data.azurerm_resource_group.rg.name
+}
+
+# -------------------------------
+# NIC (No Public IP)
+# -------------------------------
+resource "azurerm_network_interface" "nic" {
+  name                = "${var.vm_name}-nic"
+  location            = "West US 2"
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   ip_configuration {
-    name                          = "internal2"
-    subnet_id                     = azurerm_subnet.example.id
+    name                          = "internal"
+    subnet_id                     = data.azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
-resource "azurerm_virtual_machine" "example" {
-  name                  = "example-machine3"
-  location              = azurerm_resource_group.example.location
-  resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.example.id]
-  vm_size               = "Standard_DS1_v2"
+# Attach NSG to NIC
+resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
+  network_interface_id      = azurerm_network_interface.nic.id
+  network_security_group_id = data.azurerm_network_security_group.nsg.id
+}
 
-  storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+# -------------------------------
+# VM (RHEL 9.4)
+# -------------------------------
+resource "azurerm_linux_virtual_machine" "vm" {
+  name                = var.vm_name
+  location            = "West US 2"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  size                = var.vm_size
+
+  network_interface_ids = [
+    azurerm_network_interface.nic.id
+  ]
+
+  admin_username = var.admin_username
+  admin_password = var.admin_password
+  disable_password_authentication = false
+
+  os_disk {
+    name                 = "${var.vm_name}-osdisk"
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "RedHat"
+    offer     = "RHEL"
+    sku       = "9_4"
     version   = "latest"
   }
 
-  storage_os_disk {
-    name              = "example-os-disk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-
-  os_profile {
-    computer_name  = "example-machine"
-    admin_username = "adminuser"
-    admin_password = "AdminPassword123!"
-  }
-
-  os_profile_linux_config {
-    disable_password_authentication = false
-  }
+  computer_name = var.vm_name
 
   tags = {
-    environment = "testing"
+    environment = "dev"
   }
 }
+``
