@@ -3,7 +3,6 @@ name: 'RND Terraform Deployment'
 on:
   push:
     branches:
-      - main
       - rndbranch
   pull_request:
     branches:
