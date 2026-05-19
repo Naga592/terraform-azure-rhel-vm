@@ -1,4 +1,4 @@
-name: 'Terraform Deployment'
+name: 'RND Terraform Deployment'
 
 on:
   push:
