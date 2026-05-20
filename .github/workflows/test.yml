@@ -1,4 +1,4 @@
-name: 'terraform-azure-rhel-vm'
+name: 'terraform-azure-rhel-vm-new'
 
 on:
   push:
