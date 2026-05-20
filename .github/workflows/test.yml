@@ -1,9 +1,9 @@
-name: 'terraform-azure-rhel-vm-new'
+name: 'terraform-azure-rhel-vm'
 
 on:
   push:
     branches:
-      - terraform-azure-rhel-vm-new
+      - terraform-azure-rhel-vm
   pull_request:
     branches:
       - main
