@@ -1,4 +1,4 @@
-name: 'terraform-azure-rhel-vm'
+name: 'RND Terraform Deployment'
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - terraform-azure-rhel-vm
   pull_request:
     branches:
-      - terraform-azure-rhel-vm
+      - main
   workflow_dispatch:
 
 jobs:
