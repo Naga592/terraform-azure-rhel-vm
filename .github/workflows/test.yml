@@ -6,7 +6,7 @@ on:
       - terraform-azure-rhel-vm
   pull_request:
     branches:
-      - main
+      - terraform-azure-rhel-vm
   workflow_dispatch:
 
 jobs:
