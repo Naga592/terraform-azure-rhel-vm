@@ -7,79 +7,61 @@ provider "azurerm" {
   }
 }
 
-/*
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "tf-stage-azure-open-ai"
-    storage_account_name = "terraformstateopen2024ai"
-    container_name       = "terraformopenai2024"
-    key                  = "terraform.tfstate"
-  }
-}*/
-
-resource "azurerm_resource_group" "example" {
-  name     = "example-resources5"
-  location = "West Europe"
+resource "azurerm_resource_group" "Satellite_DR_RG" {
+  name     = "satdevarmrgp001"
+  location = "West US 2"
 }
 
-resource "azurerm_virtual_network" "example" {
-  name                = "example-network3"
+resource "azurerm_virtual_network" "Satellite_DR_VNET" {
+  name                = "satdevarmvnet001"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.Satellite_DR_RG.location
+  resource_group_name = azurerm_resource_group.Satellite_DR_RG.name
 }
 
-resource "azurerm_subnet" "example" {
-  name                 = "example-subnet3"
-  resource_group_name  = azurerm_resource_group.example.name
-  virtual_network_name = azurerm_virtual_network.example.name
+resource "azurerm_subnet" "Satellite_DR_SUBNET" {
+  name                 = "satdevarmsnet001"
+  resource_group_name  = azurerm_resource_group.core_rg.name
+  virtual_network_name = azurerm_virtual_network.core_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
-resource "azurerm_network_interface" "example" {
-  name                = "example-nic3"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+resource "azurerm_network_interface" "app_nic" {
+  name                = "nic-prod-weu-app-01"
+  location            = azurerm_resource_group.core_rg.location
+  resource_group_name = azurerm_resource_group.core_rg.name
 
   ip_configuration {
-    name                          = "internal2"
-    subnet_id                     = azurerm_subnet.example.id
+    name                          = "ipcfg-prod-weu-app-01"
+    subnet_id                     = azurerm_subnet.app_subnet.id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
-resource "azurerm_virtual_machine" "example" {
-  name                  = "example-machine3"
-  location              = azurerm_resource_group.example.location
-  resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.example.id]
-  vm_size               = "Standard_DS1_v2"
+resource "azurerm_linux_virtual_machine" "app_vm" {
+  name                = "vm-prod-weu-app-01"
+  resource_group_name = azurerm_resource_group.core_rg.name
+  location            = azurerm_resource_group.core_rg.location
+  size                = "Standard_F2"
+  admin_username      = "adminuser"
+  network_interface_ids = [
+    azurerm_network_interface.app_nic.id,
+  ]
 
-  storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "RedHat"
+    offer     = "RHEL"
+    sku       = "9-lvm"
     version   = "latest"
-  }
-
-  storage_os_disk {
-    name              = "example-os-disk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-
-  os_profile {
-    computer_name  = "example-machine"
-    admin_username = "adminuser"
-    admin_password = "AdminPassword123!"
-  }
-
-  os_profile_linux_config {
-    disable_password_authentication = false
-  }
-
-  tags = {
-    environment = "testing"
   }
 }
