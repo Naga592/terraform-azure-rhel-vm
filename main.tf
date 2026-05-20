@@ -21,8 +21,8 @@ resource "azurerm_virtual_network" "Satellite_DR_VNET" {
 
 resource "azurerm_subnet" "Satellite_DR_SUBNET" {
   name                 = "satdevarmsnet001"
-  resource_group_name  = azurerm_resource_group.core_rg.name
-  virtual_network_name = azurerm_virtual_network.core_vnet.name
+  resource_group_name  = azurerm_resource_group.Satellite_DR_RG.name
+  virtual_network_name = azurerm_virtual_network.Satellite_DR_VNET.name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
