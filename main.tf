@@ -26,26 +26,26 @@ resource "azurerm_subnet" "Satellite_DR_SUBNET" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 
-resource "azurerm_network_interface" "app_nic" {
-  name                = "nic-prod-weu-app-01"
-  location            = azurerm_resource_group.core_rg.location
-  resource_group_name = azurerm_resource_group.core_rg.name
+resource "azurerm_network_interface" "Satellite_DR_NIC" {
+  name                = "satdevarmnic001"
+  location            = azurerm_resource_group.Satellite_DR_RG.location
+  resource_group_name = azurerm_resource_group.Satellite_DR_RG.name
 
   ip_configuration {
-    name                          = "ipcfg-prod-weu-app-01"
-    subnet_id                     = azurerm_subnet.app_subnet.id
+    name                          = "satdevarmipcfg001"
+    subnet_id                     = azurerm_subnet.Satellite_DR_SUBNET.id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
-resource "azurerm_linux_virtual_machine" "app_vm" {
-  name                = "vm-prod-weu-app-01"
-  resource_group_name = azurerm_resource_group.core_rg.name
-  location            = azurerm_resource_group.core_rg.location
+resource "azurerm_linux_virtual_machine" "Satellite_DR_VM" {
+  name                = "satdevarmvm001"
+  resource_group_name = azurerm_resource_group.Satellite_DR_RG.name
+  location            = azurerm_resource_group.Satellite_DR_RG.location
   size                = "Standard_F2"
   admin_username      = "adminuser"
   network_interface_ids = [
-    azurerm_network_interface.app_nic.id,
+    azurerm_network_interface.Satellite_DR_NIC.id,
   ]
 
   admin_ssh_key {
